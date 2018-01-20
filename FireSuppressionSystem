@@ -1,16 +1,16 @@
 // set up of ports
-const int firePinIn = A0; //
-const int rhSensPinIn = A1; // in normal 90
-const int gasSensPinIn = A2; // in normal 60
+const int firePinIn = A0; // Normally 800
+const int rhSensPinIn = A1; // Normally 90
+const int gasSensPinIn = A2; // Normally 60
 const int movementPinInTrig = A3; //
 const int movementPinInEcho = A4; //
 
 
-const int alarmRedPinOut = 0; //
-const int alarmGrPinOut = 1; //
-const int lockLedPinOut = 2; //
-const int gasFanPinOutINA = 11;
-const int gasFanPinOutINB = 10; //
+const int alarmPinOut = 0; //
+const int lockPinOut = 1; //
+const int safetyPinOut = 2; //
+const int gasFanPinOutINA = 10;
+const int gasFanPinOutINB = 11; //
 const int exhaustFanPinOutINA = 8; //
 const int exhaustFanPinOutINB = 9; 
 
@@ -47,21 +47,21 @@ void setup() {
   pinMode(movementStatus, OUTPUT);
 
   //digital out
-  pinMode(alarmRedPinOut, OUTPUT);
-  pinMode(alarmGrPinOut, OUTPUT);
-  pinMode(lockLedPinOut, OUTPUT);
+  pinMode(alarmPinOut, OUTPUT);
+  pinMode(lockPinOut, OUTPUT);
+  pinMode(safetyPinOut, OUTPUT);
   pinMode(gasFanPinOutINA, OUTPUT);
   pinMode(gasFanPinOutINB, OUTPUT);
   pinMode(exhaustFanPinOutINA, OUTPUT);
   pinMode(exhaustFanPinOutINB, OUTPUT);
 
-  digitalWrite(alarmRedPinOut, LOW);
-  digitalWrite(alarmGrPinOut, LOW);
-  digitalWrite(lockLedPinOut, HIGH);
+  digitalWrite(alarmPinOut, LOW);
+  digitalWrite(lockPinOut, LOW);
+  digitalWrite(safetyPinOut, HIGH);
   digitalWrite(gasFanPinOutINA, HIGH);
   digitalWrite(gasFanPinOutINB, HIGH);
-  digitalWrite(exhaustFanPinOutINA, HIGH);
-  digitalWrite(exhaustFanPinOutINB, HIGH);
+  digitalWrite(exhaustFanPinOutINA, LOW);
+  digitalWrite(exhaustFanPinOutINB, LOW);
   digitalWrite(fireStatus, LOW);
   digitalWrite(movementStatus, LOW);
 
@@ -72,6 +72,12 @@ void loop() {
 
   setup();
   Serial.println("Setup Done.");
+  /*bool tmp = false;
+  if(!tmp){
+    delay(5000);
+    tmp = true;  
+  }*/
+  
   
  if (!fireExtinguished)
  {
@@ -94,9 +100,10 @@ void loop() {
         Serial.println("Fire and Smoke Detected");
         digitalWrite(fireStatus, HIGH);
 
-        digitalWrite(alarmRedPinOut, HIGH);
-        digitalWrite(lockLedPinOut, LOW);
-        delay(800);
+        digitalWrite(alarmPinOut, HIGH);
+        digitalWrite(alarmPinOut, HIGH);
+        digitalWrite(safetyPinOut, LOW);
+        delay(2000);
 
         int timeChecker = 0;
 
@@ -106,12 +113,12 @@ void loop() {
           if (analogRead(movementPinInTrig) > 50) {
 
             //Serial.println("Yes, there is the move inside. Wait for 20 seconds");
-            //delay(800);
+            //delay(200);
             timeChecker = 100;
             digitalWrite(movementStatus, HIGH);
           }
           timeChecker++;
-          delay(800);
+          delay(2000);
         }
 
         Serial.println("No movement detected. Releasing Inergen gas. Turn pump on");
@@ -122,8 +129,8 @@ void loop() {
         delay(5000); // wait 10 sec while gas occupy all room
 
 
-        digitalWrite(gasFanPinOutINB, HIGH); // stop releasing Gas
-        digitalWrite(gasFanPinOutINA, HIGH);
+        digitalWrite(gasFanPinOutINB, LOW); // stop releasing Gas
+        digitalWrite(gasFanPinOutINA, LOW);
 
         Serial.println("Gas released. Fire suppressed. Turn pump off.");
 
@@ -133,27 +140,27 @@ void loop() {
         Serial.println("Turning on Exhaust");
 
 
-        digitalWrite(exhaustFanPinOutINB, HIGH); // exhaust gas out of room
-        digitalWrite(exhaustFanPinOutINA, LOW);
+        digitalWrite(exhaustFanPinOutINB, LOW); // exhaust gas out of room
+        digitalWrite(exhaustFanPinOutINA, HIGH);
 
         delay(5000);
         //while(analogRead(gasSensPinIn) > 200){ //  should be analogRead(rhSensPinIn)
-         // delay(800); // wait for 5 sec
+         // delay(200); // wait for 5 sec
          // }
 
         while (analogRead(firePinIn) < 800)
         {
-          delay(800);
+          delay(2000);
         }
 
         Serial.println("Gas exhausted. Turning off exhaust");
         delay(2000);
 
-        digitalWrite(exhaustFanPinOutINB, HIGH); // // turn off motors for exhausting
-        digitalWrite(exhaustFanPinOutINA, HIGH);
+        digitalWrite(exhaustFanPinOutINB, LOW); // // turn off motors for exhausting
+        digitalWrite(exhaustFanPinOutINA, LOW);
 
         int i = 0;
-        digitalWrite(lockLedPinOut, HIGH);// anyway should be opened due to CO gone away
+        digitalWrite(safetyPinOut, LOW);// anyway should be opened due to CO gone away
 
         Serial.println("Checking for flame inside");
         delay(2000);
@@ -162,19 +169,21 @@ void loop() {
 
           Serial.println("Fire still present");
           digitalWrite(fireStatus, HIGH);
+          digitalWrite(safetyPinOut, LOW);
           delay(2000);
 
           delay(500);
           i++;// wait 5sec fire should gone away
           if (i > 10 ) break;
         }
-        digitalWrite(alarmRedPinOut, LOW); // no fire inside we can turn alarm off
+        digitalWrite(alarmPinOut, LOW);// no fire inside we can turn alarm off
         digitalWrite(fireStatus, LOW);
+        digitalWrite(safetyPinOut, HIGH);
         fireExtinguished = true;
       }
     }
  
   }
- delay(800);  // wait for 10 sec
+ delay(1000);  // wait for 10 sec
   
 }
