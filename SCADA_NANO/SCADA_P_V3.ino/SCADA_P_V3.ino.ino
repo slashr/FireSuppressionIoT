@@ -1,21 +1,24 @@
 
+     // @C "andresarmento" // I have used open source libraries of  https://github.com/andresarmento/modbus-arduino project, used with keeplive function
+     // I would like to thank a lot to Andresarmento for such a nice development.
+
+
 #include <EtherCard.h>
 #include <Modbus.h>
 #include <ModbusIP_ENC28J60.h>
 
-//Pins for DI Acquisition
+//Pins for MODBUS TCP DI Acquisition
 
-const int   lockLedPin        = 2;      //  access control on scada -> get form leo Pin no 2 using relay
-const int   exhaustMPin       = 8;      //  M2 exhaust motor        -> get form leo Pin no 8 using relay
-const int   gasReleaseMPin    = 3;      //  M3 inergen gas motor    -> get form leo Pin no 11
-const int   freshMPin         = 9;      //  M1 Fresh Air  motor     -> get form leo Pin no 9
-const int   movementPin       = 4;      //  occupancy sensor
-const int   firePin           = 7;      //  Fire sensor             -> get form leo Pin no 0
-const int   emerSwt           = 6;      //  Emergency switch
-//const int   gasPin          = 5;      //  inergen gas status
+const int   lockLedPin        = 6;      //  access control on scada -> get form NANO-1 -->  Pin no 6  using direct connection from board
+const int   exhaustMPin       = 9;      //  M2 exhaust motor        -> get form NANO-1 -->  Pin no 9 (INB) using direct connection from board
+const int   gasReleaseMPin    = 7;      //  M3 inergen gas motor    -> get form NANO-1 -->  Pin no 7 (INA) using direct connection from board
+const int   freshMPin         = 8;      //  M1 Fresh Air  motor     -> get form NANO-1 -->  Pin no 8 (INA) using direct connection from board
+const int   movementPin       = 4;      //  occupancy sensor        
+const int   firePin           = 2;      //  Fire sensor             -> get form NANO-1 -->  Pin no 2 using direct connection from board
+const int   emerSwt           = 3;      //  Emergency switch
 
 
-//Pin used for AI Acquisition
+//Pin used for MODBUS TCP AI Acquisition
 
 const int     rhPin             = A0;           // get RH index
 const int     gasIndexPin       = A2;           // get gas index
@@ -40,7 +43,7 @@ const int     AI_HIndex = 303;
 
 //ModbusIP object
 
-ModbusIP mb;
+ModbusIP mb;        // memory allocation for data storage
 
 void setup() {
   // The media access control (ethernet hardware) address for the shield
@@ -48,7 +51,7 @@ void setup() {
   // The IP address for the shield
   byte ip[] = { 192, 168, 1, 120 };
   //Config Modbus IP
-  mb.config(mac, ip);
+  mb.config(mac, ip);           
 
 
   //Set DI PIN mode
@@ -60,16 +63,16 @@ void setup() {
   pinMode   (movementPin, INPUT);
   pinMode   (firePin, INPUT);
   pinMode   (emerSwt, INPUT);
- // pinMode   (gasPin, INPUT);
+ 
 
-  // Set AI PIN mode
+  // Set AI PIN mode    
 
   pinMode (rhPin, INPUT);
   pinMode (AI_Gas, INPUT);
 
-  // Add DI register to funcode 01 - Use addCoil() for digital data
+  // Add DI register to funcode 01 - Use Coil for digital data
 
-  //mb.addCoil(DI_gas);
+    
   mb.addCoil(DI_lockLed);
   mb.addCoil(DI_MFresh);
   mb.addCoil(DI_MExhaust);
@@ -79,7 +82,7 @@ void setup() {
   mb.addCoil(DI_Emr);
 
 
-  // Add AI register to function code 03 - use addHreg  for Analog data
+  // Add AI register to function code 03 - use Holding register for Analog data
 
   mb.addHreg(AI_RH);
   mb.addHreg(AI_Gas);
@@ -103,15 +106,23 @@ void loop() {
   mb.Coil(DI_Emr, digitalRead(emerSwt));
 
   // calculate Heat index
+  
   float hIndex;
+  
   int rh;
   const int rTemp = 25;
 
   rh = (analogRead (rhPin));
-  int factor = (rh / 10);
+  
+  int factor = (rh / 10);     // for Scaling the AI value to percentage
+  
+      // If  RH value is less than 80% uncomment following formula
+      
+      hIndex = (0.5 * ((rTemp + 61) + ((rTemp - 68) * 1.2) + (factor * 0.094)));
 
-  hIndex = (0.5 * ((rTemp + 61) + ((rTemp - 68) * 1.2) + (factor * 0.094)));
 
+    // If  RH value is greater than 80% uncomment following formula
+    
   /*    hIndex = ((-42.379) + (2.04901523*rTemp) + (10.14333127*factor) - (0.22475541*rTemp*factor) - (.00683783*rTemp*rTemp)
       - (0.05481717*factor*factor) + (0.00122874*rTemp*rTemp*factor) + (0.00085282*rTemp*factor*factor) - (0.00000199*rTemp*rTemp*factor*factor));
 
@@ -119,7 +130,7 @@ void loop() {
 
   // Save values in Holding reg Function Code 3
 
-  mb.Hreg(AI_RH, analogRead (rhPin));
+  mb.Hreg(AI_RH, factor);
   mb.Hreg(AI_Gas, analogRead (AI_Gas));
   mb.Hreg(AI_HIndex, hIndex);
 
