@@ -25,6 +25,11 @@ int i = 0;
 
 void setup() {  
   // put your setup code here, to run once:
+  
+  
+  
+  
+  
   //analog in
   pinMode(flameSensPinIn, INPUT);
   pinMode(coSensePinIn, INPUT);
