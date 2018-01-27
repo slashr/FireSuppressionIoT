@@ -10,14 +10,16 @@ const int alarmRedPinOut = 0; //
 const int alarmGrPinOut = 1; // 
 const int lockPinOut = 2; // 
 const int gasReleasePinOutINB = 10; //
+
+
 const int gasReleasePinOutINA = 11;
 const int gasPumpPinOutINA = 8; // 
 const int gasPumpPinOutINB = 9;
 
 // set up variables
 boolean sensTempIn = false;
-boolean sensCOIn = false;
 boolean moveInRoom = false;
+boolean sensCOIn = false;
 boolean alarmOn = false;
 boolean lockDoor = false;
 boolean isWorked = false;
